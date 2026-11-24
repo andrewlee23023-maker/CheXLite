@@ -180,11 +180,11 @@ async function aiNote(facts, firstTime) {
   try {
     const llm = await import("./llm.js");
     status.hidden = false;
-    status.textContent = firstTime ? "Downloading the note model…" : "Writing note…";
+    status.textContent = firstTime ? "Downloading the note model…" : "Writing note on this device (can take a minute; the template is shown meanwhile)…";
     await llm.loadModel((p) => {
       if (p.status === "progress" && p.total > 5e6) status.textContent = `Downloading the note model… ${Math.round(p.progress)}%`;
     });
-    status.textContent = "Writing note…";
+    status.textContent = "Writing note on this device (can take a minute; the template is shown meanwhile)…";
     const text = await llm.generateNote(facts);
     if (seq !== noteSeq) return;   // a newer image was analyzed meanwhile
     const v = verify(text, facts);

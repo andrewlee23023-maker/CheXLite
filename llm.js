@@ -5,9 +5,13 @@
 import { pipeline, env } from "./vendor/tjs/transformers.min.js";
 
 const BASE = new URL("./", import.meta.url).href;
-env.allowRemoteModels = false;
-env.allowLocalModels = true;
-env.localModelPath = BASE;
+// Serve the model from this origin through the "remote" code path: in transformers.js 4.3.2 the
+// file-existence check skips local models whose path is an http(s) URL, so the tokenizer would never
+// load. Nothing leaves this origin; files are fetched as BASE + "llm-model/" + filename.
+env.allowLocalModels = false;
+env.allowRemoteModels = true;
+env.remoteHost = BASE;
+env.remotePathTemplate = "{model}/";
 env.backends.onnx.wasm.wasmPaths = {
   mjs: BASE + "vendor/tjs/ort-wasm-simd-threaded.asyncify.mjs",
   wasm: BASE + "vendor/tjs/ort-wasm-simd-threaded.asyncify.wasm",
