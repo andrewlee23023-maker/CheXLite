@@ -8,7 +8,10 @@
 - The harm that matters most is a missed finding that isn't referred, so we report sensitivity
   at a fixed operating point and missed studies per 1,000, not just AUROC.
 - Radiologists are a **reference point**, never a claimed target. Never write "radiologist-level".
-- No free-text LLM output in the product: explanations are templated from model outputs.
+- The clinician note comes from a fine-tuned Gemma 3 270M that sees ONLY the classifier's structured
+  output (probabilities, thresholds, refer decision, heatmap regions). Every note is checked by a
+  deterministic faithfulness verifier in the app. If it fails, the app shows the templated note instead.
+  Report the LLM's faithfulness rate in the evaluation; never claim the LLM adds diagnostic information.
 
 ## Hard rules (for you and every subagent)
 1. Never edit anything under `eval/`. Never run `--split test` or set `CHEX_ALLOW_TEST`.

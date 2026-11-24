@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Placeholder mark: two lung fields plus a focus ring for a "second look". The final logo is a separate task. -->
+  <rect width="64" height="64" rx="16" fill="#0E7C7B"/>
+  <path d="M29 16v32c-7 1-13-2-14-9-1-8 3-17 8-21 2-2 4-2 6-2z" fill="#fff" opacity="0.92"/>
+  <path d="M35 16v32c7 1 13-2 14-9 1-8-3-17-8-21-2-2-4-2-6-2z" fill="#fff" opacity="0.92"/>
+  <circle cx="41" cy="38" r="8" fill="none" stroke="#F5B14C" stroke-width="3.5"/>
+</svg>

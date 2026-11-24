@@ -12,3 +12,8 @@ __pycache__/
 .venv/
 *.onnx
 .claude/settings.local.json
+app/_local/
+!app/model/*.onnx
+.agents/
+.claude/skills/
+skills-lock.json
