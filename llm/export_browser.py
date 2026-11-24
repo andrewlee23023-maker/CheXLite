@@ -46,6 +46,75 @@ def split_lm_head(model: onnx.ModelProto, parts: int = 2) -> None:
             return
 
 
+def int4_gather_to_uint8(model: onnx.ModelProto) -> int:
+    """Repack INT4 GatherBlockQuantized data as uint8 with bits=4: symmetric int4 q in [-8, 7] maps to
+    uint4 q + 8 (flip each nibble's sign bit, XOR 0x88 per byte) with zero point 8, same weights."""
+    from onnx import helper
+    inits = {t.name: t for t in model.graph.initializer}
+    n_conv = 0
+    for n in model.graph.node:
+        if n.op_type != "GatherBlockQuantized":
+            continue
+        assert len(n.input) < 4 or not n.input[3], "zero points not supported here (use symmetric)"
+        t = inits[n.input[0]]
+        if t.data_type != TensorProto.INT4:
+            continue
+        raw = np.frombuffer(t.raw_data, dtype=np.uint8) ^ 0x88
+        rows, cols = t.dims
+        t.data_type = TensorProto.UINT8
+        t.dims[:] = [rows, cols // 2]
+        t.raw_data = raw.tobytes()
+        n.attribute.append(helper.make_attribute("bits", 4))
+        n_conv += 1
+    return n_conv
+
+
+def gather_q4_to_standard_ops(model: onnx.ModelProto) -> int:
+    """ORT Web's WASM build has no GatherBlockQuantized kernel at all, so rewrite the 4-bit embedding
+    lookup with standard ops: Gather packed uint8 rows and their block scales, split each byte into
+    (low, high) nibbles with integer division, subtract the zero point 8, multiply by the scale."""
+    from onnx import helper, numpy_helper
+    int4_gather_to_uint8(model)
+    inits = {t.name: t for t in model.graph.initializer}
+    out_nodes, n_conv = [], 0
+    for n in model.graph.node:
+        if n.op_type != "GatherBlockQuantized":
+            out_nodes.append(n)
+            continue
+        attrs = {a.name: helper.get_attribute_value(a) for a in n.attribute}
+        assert attrs.get("gather_axis", 0) == 0 and attrs.get("quantize_axis", 1) == 1
+        bs = attrs["block_size"]
+        W, ids, S = n.input[0], n.input[1], n.input[2]
+        rows, half = inits[W].dims
+        cols = half * 2
+        p = n.name.replace("/", "_") + "_dq"
+        def c(name, arr):
+            model.graph.initializer.append(numpy_helper.from_array(np.array(arr), p + name))
+            return p + name
+        k16, k8 = c("_16", np.int32(16)), c("_8", np.float32(8))
+        shp_pairs, shp_blocks = c("_shp_pairs", np.array([0, 0, half, 1], np.int64)), c("_shp_blocks", np.array([0, 0, cols // bs, bs], np.int64))
+        shp_out, ax = c("_shp_out", np.array([0, 0, cols], np.int64)), c("_ax", np.array([-1], np.int64))
+        def mk(op, ins, out, **kw):
+            out_nodes.append(helper.make_node(op, ins, [p + out], name=p + out, **kw))
+            return p + out
+        g = mk("Gather", [W, ids], "_g", axis=0)                     # [B, T, half] uint8
+        gi = mk("Cast", [g], "_gi", to=TensorProto.INT32)
+        hi = mk("Div", [gi, k16], "_hi")
+        lo = mk("Sub", [gi, mk("Mul", [hi, k16], "_hi16")], "_lo")
+        lo4 = mk("Reshape", [lo, shp_pairs], "_lo4")
+        hi4 = mk("Reshape", [hi, shp_pairs], "_hi4")
+        pairs = mk("Concat", [lo4, hi4], "_pairs", axis=-1)          # low nibble = even column
+        q = mk("Sub", [mk("Cast", [pairs], "_qf", to=TensorProto.FLOAT), k8], "_q")
+        qb = mk("Reshape", [q, shp_blocks], "_qb")                    # [B, T, cols/bs, bs]
+        sc = mk("Unsqueeze", [mk("Gather", [S, ids], "_s", axis=0), ax], "_s4")
+        deq = mk("Mul", [qb, sc], "_deq")
+        out_nodes.append(helper.make_node("Reshape", [deq, shp_out], [n.output[0]], name=p + "_out"))
+        n_conv += 1
+    del model.graph.node[:]
+    model.graph.node.extend(out_nodes)
+    return n_conv
+
+
 def quantize(src: Path, symmetric: bool, head_bits: int) -> onnx.ModelProto:
     """4-bit block-32 weights for the transformer; the output projection (lm_head) at head_bits.
     Greedy decoding takes the argmax over a 262k vocabulary, so lm_head is the most rounding-sensitive."""
@@ -63,6 +132,7 @@ def quantize(src: Path, symmetric: bool, head_bits: int) -> onnx.ModelProto:
         q = MatMulNBitsQuantizer(model, bits=head_bits, nodes_to_include=head, **kw)
         q.process()
         model = q.model.model
+    print("GatherBlockQuantized -> standard ops:", gather_q4_to_standard_ops(model))
     return model
 
 
@@ -162,6 +232,12 @@ def main():
     qm = quantize(fp32 / "model.onnx", not a.asym, a.head_bits)
     n_chunks = save_chunked(qm, out / "onnx", "model_q4.onnx")
 
+    # transformers.js reads the chat template from tokenizer_config.json, not chat_template.jinja
+    tc_path, jinja = out / "tokenizer_config.json", out / "chat_template.jinja"
+    if jinja.exists():
+        tc = json.loads(tc_path.read_text(encoding="utf-8"))
+        tc["chat_template"] = jinja.read_text(encoding="utf-8")
+        tc_path.write_text(json.dumps(tc, indent=2, ensure_ascii=False), encoding="utf-8")
     cfg = json.loads((out / "config.json").read_text())
     cfg["transformers.js_config"] = {"use_external_data_format": {"model_q4.onnx": n_chunks}, "dtype": "q4"}
     (out / "config.json").write_text(json.dumps(cfg, indent=2))

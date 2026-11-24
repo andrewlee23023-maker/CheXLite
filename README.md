@@ -17,7 +17,7 @@ officer or nurse, or wait days for a remote read. The question at the point of c
 ChexLite answers that question for five findings: atelectasis, cardiomegaly, consolidation, edema and
 pleural effusion (the CheXpert competition labels). It is a triage aid, not a diagnosis, and a
 radiologist can always be consulted later. It is built for phone-level hardware with no connectivity:
-the image model is 17 MB and runs on the CPU in the browser (latency: _TBD_).
+the image model is 17 MB and runs on the CPU in the browser.
 
 ## What the clinician sees
 1. **Decision:** "Refer to a radiologist" or "No referral suggested", with the any-finding score and
@@ -139,7 +139,7 @@ classifier outputs come from frontal dev images the classifier never trained on.
 | Gemma 270M, SFT + GRPO | real outputs, 400 (inspected) | 100% [99.0, 100] |
 | Gemma 270M, SFT + GRPO | **held-out** 400 | **100% [99.0, 100]** |
 | Shipped ONNX: 4-bit body, 4-bit lm_head (274 MB) | held-out, first 60 | 73.3% |
-| Shipped ONNX: 4-bit body, 8-bit lm_head (357 MB) | held-out, 400 | _TBD_ |
+| **Shipped ONNX**: 4-bit body, 8-bit lm_head (357 MB) | held-out 400, greedy, ONNX Runtime | **96.5% [94.2, 97.9]** (386/400) |
 
 How we got here, honestly: the SFT model's failures on the first real set were concentrated in cases the
 synthetic sampler rarely produced (4–5 flags: 25% of real outputs vs 5% of synthetic; flagged but not
@@ -147,6 +147,15 @@ referred). We changed only the GRPO prompt sampler in response, then measured on
 images that had not been looked at. GRPO's cost is style diversity: notes are faithful but formulaic
 (3 distinct opening sentences across 40 sampled notes). Quantizing the 262k-vocabulary output layer to
 4 bits broke faithfulness (73%), so the shipped model keeps it at 8 bits. Asymmetric 4-bit was worse (68%).
+
+**In the browser.** The shipped files run in transformers.js 4.3.2 on single-threaded WASM. Two fixes
+were needed and are in `llm/export_browser.py`: the WASM build has no kernel for the 4-bit embedding
+lookup (`GatherBlockQuantized`), so it is rewritten with standard ONNX ops (identical outputs), and the
+chat template is embedded in `tokenizer_config.json`. In headless Edge on a desktop CPU, the model
+loads in ~4 s from cache and writes a note in **30–65 s**. A phone will be slower, which is why the
+template note is shown immediately and the AI note replaces it only if, and when, it passes the
+verifier. In that smoke test, 2 of 3 notes passed. The third named a region the classifier never
+reported, the verifier rejected it, and the template stayed.
 
 ## Who benefits, and who could be harmed
 - **Benefits:** a clinician without radiology support gets a consistent second look, a pointer to where
@@ -175,8 +184,8 @@ images that had not been looked at. GRPO's cost is style diversity: notes are fa
 - Phone photos of films (CheXphoto) are not evaluated yet.
 - The LLM note adds no diagnostic information. It only rephrases the classifier output, and the
   verifier checks consistency, not clinical correctness.
-- The note model is a ~360 MB one-time download, too large for some connections, which is why
-  it is opt-in.
+- The note model is a ~360 MB one-time download and slow on CPU (30–65 s per note on a desktop),
+  which is why it is opt-in and never blocks the result. Multi-threaded WASM or WebGPU would help.
 
 ## Reproduce
 ```bash

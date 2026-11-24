@@ -4,8 +4,8 @@
     "head_bits": 8
   },
   "facts": "real_facts_heldout.jsonl",
-  "q4_verifier_pass": 58,
-  "n": 60,
-  "pass_rate": 0.9667,
-  "example": "Referral to a radiologist is recommended (overall score 0.54 vs threshold 0.26). Atelectasis flagged (score 0.54). The model flags cardiomegaly in the central middle chest (score 0.19). The model did not flag consolidation, edema or pleural effusion. This screens for five findings only. It is not a diagnosis and does not replace clinical judgment."
+  "q4_verifier_pass": 386,
+  "n": 400,
+  "pass_rate": 0.965,
+  "example": "Referral to a radiologist is recommended (overall score 0.76 vs threshold 0.26). Atelectasis flagged (score 0.34). The model flags consolidation in the right upper zone (score 0.07). Pleural effusion flagged (score 0.76). The model did not flag edema. This screens for five findings only. It is not a diagnosis and does not replace a radiologist read."
 }

@@ -1,5 +1,4 @@
-* text=auto eol=lf
-*.jpg binary
-*.png binary
-*.pt binary
 *.onnx binary
+*.onnx_data binary
+*.onnx_data_* binary
+*.wasm binary
