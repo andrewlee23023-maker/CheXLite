@@ -1,5 +1,5 @@
 // Offline cache: the core app is precached on first visit. The optional AI-note model and its runtime
-// (~330 MB) are cached on first use by the fetch handler below, after the user opts in.
+// (~390 MB) are cached on first use by the fetch handler below, after the user opts in.
 const CACHE = "chexlite-v2";
 const ASSETS = [
   "./", "index.html", "style.css", "app.js", "note.js", "llm.js", "icon.svg", "manifest.webmanifest",

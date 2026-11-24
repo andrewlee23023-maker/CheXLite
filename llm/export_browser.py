@@ -13,7 +13,6 @@ import json
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -24,13 +23,47 @@ HERE = Path(__file__).resolve().parent
 CHUNK_BYTES = 90 * 1024 * 1024
 
 
-def quantize(src: Path) -> onnx.ModelProto:
+def split_lm_head(model: onnx.ModelProto, parts: int = 2) -> None:
+    """Replace logits = h @ W (W: [hidden, vocab]) by Concat([h @ W_0, ..., h @ W_k], -1) along the vocab axis,
+    so no single quantized initializer exceeds the per-file limit. Mathematically identical."""
+    from onnx import helper, numpy_helper
+    inits = {t.name: t for t in model.graph.initializer}
+    for i, n in enumerate(model.graph.node):
+        if n.op_type == "MatMul" and "lm_head" in n.name and n.input[1] in inits:
+            W = numpy_helper.to_array(inits[n.input[1]])
+            cuts = np.array_split(np.arange(W.shape[1]), parts)
+            new_nodes, outs = [], []
+            for k, c in enumerate(cuts):
+                wname, oname = f"{n.input[1]}_part{k}", f"{n.output[0]}_part{k}"
+                model.graph.initializer.append(numpy_helper.from_array(np.ascontiguousarray(W[:, c]), wname))
+                new_nodes.append(helper.make_node("MatMul", [n.input[0], wname], [oname], name=f"{n.name}_part{k}"))
+                outs.append(oname)
+            new_nodes.append(helper.make_node("Concat", outs, [n.output[0]], name=f"{n.name}_concat", axis=-1))
+            model.graph.initializer.remove(inits[n.input[1]])
+            del model.graph.node[i]
+            for k, nn in enumerate(new_nodes):
+                model.graph.node.insert(i + k, nn)
+            return
+
+
+def quantize(src: Path, symmetric: bool, head_bits: int) -> onnx.ModelProto:
+    """4-bit block-32 weights for the transformer; the output projection (lm_head) at head_bits.
+    Greedy decoding takes the argmax over a 262k vocabulary, so lm_head is the most rounding-sensitive."""
     from onnxruntime.quantization.matmul_nbits_quantizer import MatMulNBitsQuantizer
     model = onnx.load(str(src), load_external_data=True)
-    q = MatMulNBitsQuantizer(model, bits=4, block_size=32, is_symmetric=True,
-                             op_types_to_quantize=("MatMul", "Gather"), quant_axes=(("MatMul", 0), ("Gather", 1)))
+    if head_bits == 8:
+        split_lm_head(model, 2)   # 8-bit lm_head is 168 MB; two halves fit the 90 MB file limit
+    head = [n.name for n in model.graph.node if n.op_type == "MatMul" and "lm_head" in n.name]
+    kw = dict(block_size=32, is_symmetric=symmetric, op_types_to_quantize=("MatMul", "Gather"),
+              quant_axes=(("MatMul", 0), ("Gather", 1)))
+    q = MatMulNBitsQuantizer(model, bits=4, nodes_to_exclude=head if head_bits != 4 else None, **kw)
     q.process()
-    return q.model.model
+    model = q.model.model
+    if head_bits != 4 and head:
+        q = MatMulNBitsQuantizer(model, bits=head_bits, nodes_to_include=head, **kw)
+        q.process()
+        model = q.model.model
+    return model
 
 
 def save_chunked(model: onnx.ModelProto, out_dir: Path, name: str) -> int:
@@ -109,18 +142,24 @@ def main():
     ap.add_argument("--out", default=str(HERE.parent / "app" / "llm-model"))
     ap.add_argument("--facts", default=str(HERE / "data" / "real_facts.jsonl"))
     ap.add_argument("--verify-n", type=int, default=60)
+    ap.add_argument("--asym", action="store_true", help="asymmetric 4-bit (zero points)")
+    ap.add_argument("--head-bits", type=int, default=8, choices=[4, 8],
+                    help="lm_head precision. 4-bit: 274 MB but 73%% verifier pass on held-out; 8-bit: 357 MB, 97%%")
     a = ap.parse_args()
 
     out = Path(a.out)
+    if (out / "onnx").exists():
+        shutil.rmtree(out / "onnx")
     (out / "onnx").mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory() as td:
+    fp32 = Path(a.model) / "onnx_fp32"          # cached full-precision export (gitignored with llm/runs)
+    if not (fp32 / "model.onnx").exists():
         exe = Path(sys.executable).parent / "optimum-cli"
-        subprocess.run([str(exe), "export", "onnx", "--model", a.model, "--task", "text-generation-with-past", td], check=True)
-        for f in Path(td).iterdir():
-            if f.suffix in (".json", ".jinja", ".model") or f.name.startswith("tokenizer"):
-                shutil.copy2(f, out / f.name)
-        print("quantizing to 4-bit (MatMul + Gather, block 32)...")
-        qm = quantize(Path(td) / "model.onnx")
+        subprocess.run([str(exe), "export", "onnx", "--model", a.model, "--task", "text-generation-with-past", str(fp32)], check=True)
+    for f in fp32.iterdir():
+        if f.suffix in (".json", ".jinja", ".model") or f.name.startswith("tokenizer"):
+            shutil.copy2(f, out / f.name)
+    print(f"quantizing: 4-bit block 32 ({'asym' if a.asym else 'sym'}), lm_head {a.head_bits}-bit")
+    qm = quantize(fp32 / "model.onnx", not a.asym, a.head_bits)
     n_chunks = save_chunked(qm, out / "onnx", "model_q4.onnx")
 
     cfg = json.loads((out / "config.json").read_text())
@@ -138,7 +177,7 @@ def main():
     finally:
         for c in copied:
             Path(c).unlink()
-    res = {"q4_verifier_pass": ok, "n": n, "pass_rate": round(ok / n, 4), "example": last}
+    res = {"quant": {"asym": a.asym, "head_bits": a.head_bits}, "facts": Path(a.facts).name, "q4_verifier_pass": ok, "n": n, "pass_rate": round(ok / n, 4), "example": last}
     (HERE / "results" / "q4_ort_verify.json").write_text(json.dumps(res, indent=2))
     print(json.dumps(res, indent=2))
 

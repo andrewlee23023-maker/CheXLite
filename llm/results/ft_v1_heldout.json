@@ -1,0 +1,59 @@
+{
+  "model": "runs/gemma270m-v1",
+  "facts": "real_facts_heldout.jsonl",
+  "zero_shot": false,
+  "n": 400,
+  "pass_rate": 0.9,
+  "pass_ci95": [
+    0.8667,
+    0.9257
+  ],
+  "failure_types": {
+    "flagged Pleural": 17,
+    "flagged Cardiomegaly": 11,
+    "flagged Consolidation": 6,
+    "region \"central": 4,
+    "region \"right": 2,
+    "region \"left": 1,
+    "flagged Atelectasis": 1
+  },
+  "mean_words": 55.9,
+  "gpu_seconds_per_note": 0.299,
+  "failed_examples": [
+    {
+      "prompt": "Model output:\nrefer: yes (score 0.88, threshold 0.26)\nAtelectasis: 0.33 / 0.26 FLAGGED, central middle chest\nCardiomegaly: 0.15 / 0.09 FLAGGED, central middle chest\nConsolidation: 0.10 / 0.06 FLAGGED, central middle chest\nEdema: 0.75 / 0.29 FLAGGED, central middle chest\nPleural effusion: 0.88 / 0.44 FLAGGED, left lower zone\nWrite the clinician note.",
+      "note": "Referral to a radiologist is recommended. Possible atelectasis was flagged; check the central middle chest. Possible cardiomegaly was flagged; check the central middle chest. Possible consolidation was flagged; check the central middle chest. Possible edema was flagged; check the central middle chest. This is a screening aid only.",
+      "problems": [
+        "flagged Pleural Effusion not reported"
+      ]
+    },
+    {
+      "prompt": "Model output:\nrefer: yes (score 0.79, threshold 0.26)\nAtelectasis: 0.53 / 0.26 FLAGGED, left lower zone\nCardiomegaly: 0.14 / 0.09 FLAGGED, central middle chest\nConsolidation: 0.15 / 0.06 FLAGGED, central middle chest\nEdema: 0.33 / 0.29 FLAGGED, central middle chest\nPleural effusion: 0.79 / 0.44 FLAGGED, central middle chest\nWrite the clinician note.",
+      "note": "Referral to a radiologist is recommended. Possible atelectasis was flagged; check the left lower zone. Possible cardiomegaly was flagged; check the central middle chest. Possible consolidation was flagged; check the central middle chest. Possible edema was flagged; check the central middle chest. This is a screening aid only.",
+      "problems": [
+        "flagged Pleural Effusion not reported"
+      ]
+    },
+    {
+      "prompt": "Model output:\nrefer: no (score 0.11, threshold 0.26)\nAtelectasis: 0.03 / 0.26 not flagged\nCardiomegaly: 0.11 / 0.09 FLAGGED, central middle chest\nConsolidation: 0.01 / 0.06 not flagged\nEdema: 0.01 / 0.29 not flagged\nPleural effusion: 0.06 / 0.44 not flagged\nWrite the clinician note.",
+      "note": "Referral is not suggested: the overall score 0.11 is below the threshold of 0.26. No flag for atelectasis, cardiomegaly, consolidation, edema or pleural effusion. This screens for five findings only. It is not a diagnosis and does not replace clinical judgment.",
+      "problems": [
+        "flagged Cardiomegaly not reported"
+      ]
+    },
+    {
+      "prompt": "Model output:\nrefer: yes (score 0.87, threshold 0.26)\nAtelectasis: 0.39 / 0.26 FLAGGED, central middle chest\nCardiomegaly: 0.29 / 0.09 FLAGGED, central middle chest\nConsolidation: 0.10 / 0.06 FLAGGED, central middle chest\nEdema: 0.80 / 0.29 FLAGGED, central middle chest\nPleural effusion: 0.87 / 0.44 FLAGGED, left middle zone\nWrite the clinician note.",
+      "note": "Referral to a radiologist is recommended. Possible atelectasis was flagged; check the central middle chest. Possible cardiomegaly was flagged; check the central middle chest. Possible consolidation was flagged; check the central middle chest. Possible edema was flagged; check the central middle chest. This is a screening aid only.",
+      "problems": [
+        "flagged Pleural Effusion not reported"
+      ]
+    },
+    {
+      "prompt": "Model output:\nrefer: yes (score 0.98, threshold 0.26)\nAtelectasis: 0.48 / 0.26 FLAGGED, central middle chest\nCardiomegaly: 0.08 / 0.09 not flagged\nConsolidation: 0.10 / 0.06 FLAGGED, right lower zone\nEdema: 0.74 / 0.29 FLAGGED, right middle zone\nPleural effusion: 0.98 / 0.44 FLAGGED, right lower zone\nWrite the clinician note.",
+      "note": "Referral to a radiologist is recommended (overall score 0.98 vs threshold 0.26). Check the central middle chest for atelectasis (score 0.48, threshold 0.26). The model flags consolidation in the right lower zone (score 0.10). Check the right lower zone for edema (score 0.74, threshold 0.29). Possible pleural effusion: review the right lower zone. The model did not flag cardiomegaly. This tool only screens for five findings and is not a diagnosis; use clinical judgment.",
+      "problems": [
+        "region \"right lower zone\" not supported"
+      ]
+    }
+  ]
+}

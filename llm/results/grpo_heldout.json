@@ -1,0 +1,15 @@
+{
+  "model": "runs/gemma270m-grpo",
+  "facts": "real_facts_heldout.jsonl",
+  "zero_shot": false,
+  "n": 400,
+  "pass_rate": 1.0,
+  "pass_ci95": [
+    0.9905,
+    1.0
+  ],
+  "failure_types": {},
+  "mean_words": 61.6,
+  "gpu_seconds_per_note": 0.311,
+  "failed_examples": []
+}

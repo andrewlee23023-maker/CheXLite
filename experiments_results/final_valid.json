@@ -1,0 +1,162 @@
+{
+  "split": "valid",
+  "n_studies": 200,
+  "n_any_finding_scored": 200,
+  "prevalence_any": 0.64,
+  "mean_auroc_5": 0.8646,
+  "mean_auroc_ci95": [
+    0.8393,
+    0.8885
+  ],
+  "per_label_auroc": {
+    "Atelectasis": 0.8118,
+    "Cardiomegaly": 0.7646,
+    "Consolidation": 0.8863,
+    "Edema": 0.9403,
+    "Pleural Effusion": 0.92
+  },
+  "referral_shipped_threshold_from_dev": {
+    "threshold": 0.2903,
+    "tp": 118,
+    "fn": 10,
+    "tn": 47,
+    "fp": 25,
+    "sensitivity": 0.9219,
+    "sensitivity_ci95": [
+      0.8622,
+      0.957
+    ],
+    "specificity": 0.6528,
+    "specificity_ci95": [
+      0.5376,
+      0.7525
+    ],
+    "referral_rate": 0.715,
+    "missed_per_1000": 50.0
+  },
+  "referral_in_sample_valid_95": {
+    "threshold": 0.2417,
+    "tp": 122,
+    "fn": 6,
+    "tn": 40,
+    "fp": 32,
+    "sensitivity": 0.9531,
+    "sensitivity_ci95": [
+      0.9015,
+      0.9783
+    ],
+    "specificity": 0.5556,
+    "specificity_ci95": [
+      0.4409,
+      0.6646
+    ],
+    "referral_rate": 0.77,
+    "missed_per_1000": 30.0
+  },
+  "flags_shipped_thresholds_from_dev": {
+    "Atelectasis": {
+      "n_pos": 75,
+      "threshold": 0.2684,
+      "tp": 65,
+      "fn": 10,
+      "tn": 81,
+      "fp": 44,
+      "sensitivity": 0.8667,
+      "sensitivity_ci95": [
+        0.7717,
+        0.9259
+      ],
+      "specificity": 0.648,
+      "specificity_ci95": [
+        0.561,
+        0.7262
+      ],
+      "referral_rate": 0.545,
+      "missed_per_1000": 50.0
+    },
+    "Cardiomegaly": {
+      "n_pos": 66,
+      "threshold": 0.1146,
+      "tp": 32,
+      "fn": 34,
+      "tn": 123,
+      "fp": 11,
+      "sensitivity": 0.4848,
+      "sensitivity_ci95": [
+        0.3685,
+        0.6029
+      ],
+      "specificity": 0.9179,
+      "specificity_ci95": [
+        0.859,
+        0.9535
+      ],
+      "referral_rate": 0.215,
+      "missed_per_1000": 170.0
+    },
+    "Consolidation": {
+      "n_pos": 32,
+      "threshold": 0.0541,
+      "tp": 30,
+      "fn": 2,
+      "tn": 122,
+      "fp": 46,
+      "sensitivity": 0.9375,
+      "sensitivity_ci95": [
+        0.7985,
+        0.9827
+      ],
+      "specificity": 0.7262,
+      "specificity_ci95": [
+        0.6543,
+        0.788
+      ],
+      "referral_rate": 0.38,
+      "missed_per_1000": 10.0
+    },
+    "Edema": {
+      "n_pos": 42,
+      "threshold": 0.3204,
+      "tp": 37,
+      "fn": 5,
+      "tn": 134,
+      "fp": 24,
+      "sensitivity": 0.881,
+      "sensitivity_ci95": [
+        0.75,
+        0.9481
+      ],
+      "specificity": 0.8481,
+      "specificity_ci95": [
+        0.7839,
+        0.8958
+      ],
+      "referral_rate": 0.305,
+      "missed_per_1000": 25.0
+    },
+    "Pleural Effusion": {
+      "n_pos": 64,
+      "threshold": 0.5285,
+      "tp": 46,
+      "fn": 18,
+      "tn": 124,
+      "fp": 12,
+      "sensitivity": 0.7188,
+      "sensitivity_ci95": [
+        0.5987,
+        0.8141
+      ],
+      "specificity": 0.9118,
+      "specificity_ci95": [
+        0.8521,
+        0.9488
+      ],
+      "referral_rate": 0.29,
+      "missed_per_1000": 90.0
+    }
+  },
+  "model": {
+    "arch": "mobilenetv3_large_100",
+    "onnx_mb": 16.9
+  }
+}

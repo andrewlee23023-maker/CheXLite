@@ -82,7 +82,7 @@
           <span id="note-badge" class="badge"></span>
         </div>
         <p id="note" class="note"></p>
-        <button id="ai-note-btn" class="btn secondary ai-note-btn" type="button" hidden>Write notes with on-device AI (one-time 300 MB download)</button>
+        <button id="ai-note-btn" class="btn secondary ai-note-btn" type="button" hidden>Write notes with on-device AI (one-time 360 MB download)</button>
         <p id="ai-note-status" class="hint muted" hidden></p>
       </div>
 
@@ -94,8 +94,8 @@
       <p>A MobileNetV3 classifier (~17 MB) trained on CheXpert, running offline in your browser.</p>
       <p id="about-metrics" class="muted"></p>
       <ul class="muted">
-        <li>Referral threshold is set to catch about 95% of studies with any of the 5 findings, so it errs toward referring.</li>
-        <li>Trained on US hospital films. Accuracy drops on phone photos, unusual exposures, children and lateral views.</li>
+        <li>The referral threshold errs toward referring: it was set to catch 95% of studies with any of the 5 findings on the development data, and caught 92% on the radiologist-read test.</li>
+        <li>Trained on films from one US hospital. Not tested on phone photos of films, children or other populations; expect lower accuracy there.</li>
         <li>R and L markers assume a standard frontal film (the patient's right on the image's left).</li>
       </ul>
       <form method="dialog"><button class="btn secondary">Close</button></form>

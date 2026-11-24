@@ -24,14 +24,15 @@
   ],
   "onnx_bytes": 16860337,
   "flag_thresholds": {
-    "Atelectasis": 0.2607658,
-    "Cardiomegaly": 0.09073549,
-    "Consolidation": 0.058776557,
-    "Edema": 0.2894721,
-    "Pleural Effusion": 0.443269
+    "Atelectasis": 0.2683658,
+    "Cardiomegaly": 0.11456649,
+    "Consolidation": 0.054098696,
+    "Edema": 0.3203959,
+    "Pleural Effusion": 0.5284878
   },
-  "refer_threshold": 0.25515804,
+  "refer_threshold": 0.2902762,
   "target_sensitivity": 0.95,
   "threshold_source": "dev (provisional)",
-  "flag_target_sensitivity": 0.8
+  "flag_target_sensitivity": 0.8,
+  "metrics_summary": "Tested once on 200 CheXpert validation studies read by 3 radiologists: it referred 118 of 128 studies with a finding (92%) and missed 10, while 65% of normal studies were not referred. Mean AUROC 0.86. Thresholds were fixed before this test."
 }
