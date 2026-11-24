@@ -1,34 +1,28 @@
 # Loop notes (maintained by the orchestrator)
 
+## Status (after 5 log rows, 2026-11-24)
+Best is 0.7986 (CI 0.7935-0.8046): mobilenetv3_large_100 at 224px with Cardiomegaly U-ignore.
+Every result so far sits inside the baseline CI of about ±0.005, so dev differences this small are
+mostly noise. Prefer ideas that could plausibly move the score by more than 0.005.
+Counters: 2 non-improving iterations in a row, 1 kept improvement that fell inside the previous CI.
+
 ## What helps
+- Cardiomegaly uncertain zeros -> ignore: 0.7956 -> 0.7986, KEPT, but inside the baseline CI.
 
 ## What hurts / no effect
+- Pleural Effusion uncertain ones -> ignore: 0.7961. U-ones looks right for Effusion.
+- img_size 224 -> 320: 0.7990, essentially flat, not kept. With the fixed budget, the larger input does not pay off.
+- BCE pos_weight clip(neg/pos, 5): 0.7956, flat to worse. Atelectasis AUROC is still the weakest label at 0.686.
 
 ## Untried ideas
-Ranked by the iteration-7 analyst, all still untested:
-1. `img_size: 320` (budget max). Many misses are subtle Cardiomegaly/Atelectasis/Effusion. Same checkpoint size.
-2. `uncertain_policy` set to `ignore` for Cardiomegaly and Consolidation, instead of U-zeros.
-3. `pos_weight` = clamp(neg/pos, max=5) in BCE.
+1. `frontal_only: true` (existing config flag). The worst false alarms are all-negative studies with
+   Effusion/Edema p of about 0.9 or higher, possibly from lateral views. Dev still includes laterals.
+   Check with the auditor that filtering *training* views is not "dropping samples".
+2. Consolidation uncertain zeros -> ignore, mirroring the kept Cardiomegaly change. Expect a gain inside the CI.
+3. Atelectasis is the bottleneck label at 0.686. Try label-specific ideas there, e.g. U-ignore or U-zeros for Atelectasis.
+4. Bigger levers inside the budget: LR schedule or warmup, stronger augmentation, or a different small
+   backbone (fp32 checkpoint < 25 MB; the current one is 17 MB).
 
-## Infra blockers
-- 2026-11-24, iteration 7: `.venv/Scripts/python src/train.py` and `git checkout` need permission
-  approval in the headless session. The experimenter and the orchestrator were both denied, so idea 1 never
-  trained. Its edit was reverted by hand and it is NOT a failed idea. This probably explains why iterations
-  1-6 added no rows to log.tsv. Fix: allow the venv python and git commands in .claude/settings.
-- 2026-11-24, iteration 8: STILL BLOCKED. The `cd` prefix was not the cause: the exact allowlisted string
-  `.venv/Scripts/python src/train.py` (no cd, no pipes) was denied with "This command requires approval",
-  and so was `git checkout -- src/`. Meanwhile `git status` works. So the allow rules in `.claude/settings.json`
-  are not being applied to these commands. The likely causes are Windows path or prefix matching of
-  `.venv/Scripts/python` and `--` inside `git checkout`, or a permission mode / settings source that overrides
-  the project allows. The chosen idea (Cardiomegaly uncertain `zeros` -> `ignore`, a 1-line config change;
-  encode_labels already supports ignore) was reverted by hand and is NOT a failed idea. Run it first once
-  training works.
-  Try: run `scripts/run_loop.sh` with an explicit `--allowedTools` / `--permission-mode` that covers the venv
-  python, or add wildcard rules such as `Bash(.venv/Scripts/python *)` and `Bash(git checkout *)`, then check
-  them with one manual headless call before spending more iterations.
-- 2026-11-24, iteration 9: STILL BLOCKED, and `.claude/settings.json` is unchanged since iteration 8.
-  `.venv/Scripts/python --version` was denied ("This command requires approval"), so no experiment was
-  attempted and no analyst or experimenter was spawned. The orchestrator wrote `experiments/STOP` to halt
-  `run_loop.sh`. This is an infra halt, NOT the stopping rule: log.tsv still has only the baseline row.
-  Delete STOP after fixing permissions. Check the fix with one manual headless call first, e.g.
-  `claude -p "run .venv/Scripts/python --version" --permission-mode acceptEdits`.
+## Infra (resolved)
+Iterations 7-9 of an earlier run were blocked by Bash permission denials for the venv python and git.
+This is now fixed: training, eval and ratchet all run headless. The old STOP file is gone.
