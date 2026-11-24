@@ -2,3 +2,4 @@ commit	idea	dev	ci_lo	ci_hi	referral_rate	kept	time
 cd77835	mobilenetv3_large_100 224px baseline (U-ones Atel/Edema/Eff, U-zeros Card/Cons)	0.7956	0.7901	0.8011	0.837	1	2026-11-23T23:55:59
 5e8d017	Cardiomegaly uncertain policy zeros -> ignore	0.7986	0.7935	0.8046	0.839	1	2026-11-24T00:28:17
 d975667	Pleural Effusion uncertain policy ones -> ignore	0.7961	0.7907	0.8017	0.841	0	2026-11-24T00:44:52
+9ae23f5	img_size 224 -> 320	0.7990	0.7935	0.8051	0.840	0	2026-11-24T01:19:18
