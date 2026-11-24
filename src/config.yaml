@@ -19,5 +19,5 @@ augment:
   degrees: 7
   translate: 0.05
   scale: [0.95, 1.05]
-num_workers: 6
+num_workers: 4
 amp: true
