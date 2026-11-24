@@ -1,6 +1,6 @@
 // Offline cache: the core app is precached on first visit. The optional AI-note model and its runtime
 // (~390 MB) are cached on first use by the fetch handler below, after the user opts in.
-const CACHE = "chexlite-v2";
+const CACHE = "chexlite-v3";
 const ASSETS = [
   "./", "index.html", "style.css", "app.js", "note.js", "llm.js", "icon.svg", "manifest.webmanifest",
   "model/meta.json", "model/chexlite.onnx",
@@ -16,13 +16,24 @@ self.addEventListener("activate", (e) => {
     .then(() => self.clients.claim()));
 });
 
+// Cross-origin isolation: GitHub Pages can't send COOP/COEP headers, so add them here. That turns on
+// SharedArrayBuffer, which multithreaded WASM needs for the AI note. Everything the app loads is same-origin.
+function isolate(res) {
+  if (!res || res.type === "opaque" || res.status === 0) return res;
+  const h = new Headers(res.headers);
+  h.set("Cross-Origin-Opener-Policy", "same-origin");
+  h.set("Cross-Origin-Embedder-Policy", "require-corp");
+  h.set("Cross-Origin-Resource-Policy", "same-origin");
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
+}
+
 self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET") return;
+  if (e.request.method !== "GET" || new URL(e.request.url).origin !== location.origin) return;
   e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request).then((res) => {
-    if (res.ok && new URL(e.request.url).origin === location.origin) {
+    if (res.ok) {
       const copy = res.clone();
       caches.open(CACHE).then((c) => c.put(e.request, copy));
     }
     return res;
-  })));
+  })).then(isolate));
 });

@@ -26,7 +26,7 @@ the image model is 17 MB and runs on the CPU in the browser.
 2. **Findings:** a score bar for each label, with the flag threshold at the bar's midpoint.
 3. **Where to look:** a Grad-CAM heatmap per finding, computed inside the ONNX graph, plus a plain
    region name ("left lower zone").
-4. **Note:** a templated note by default. Opt in to on-device AI notes (one-time ~360 MB download), and
+4. **Note:** a templated note by default. Opt in to on-device AI notes (one-time ~170 MB download), and
    the app shows the AI note **only if** the deterministic verifier finds it consistent with the model
    output. Otherwise the template stays.
 
@@ -72,8 +72,9 @@ structured output only (scores, thresholds, refer decision, region names). It ne
 - *GRPO:* on top of SFT. The reward is the verifier (+1 for pass, −0.25 per violated rule), with a
   KL penalty against the SFT model. Prompts come from a rebalanced synthetic sampler covering the cases
   SFT got wrong: 4–5 flags, and flagged but not referred.
-- *Export:* ONNX, 4-bit weights (MatMulNBits, block 32) with an 8-bit output layer, split into files
-  under 90 MB so GitHub Pages can serve them. It runs in transformers.js on WASM.
+- *Export:* ONNX, 4-bit weights (MatMulNBits, block 32). The output layer keeps only the 453 tokens the
+  note model was trained on, at full precision (see below). Files are under 90 MB so GitHub Pages can serve them.
+  It runs in transformers.js on WebGPU when available, otherwise multithreaded WASM.
 
 **Faithfulness verifier** (`app/note.js`, twin in `llm/note_rules.py`; parity-tested on 2,473 vectors,
 0 mismatches). A note passes only if:
@@ -139,20 +140,41 @@ classifier outputs come from frontal dev images the classifier never trained on.
 | Gemma 270M, SFT + GRPO | real outputs, 400 (inspected) | 100% [99.0, 100] |
 | Gemma 270M, SFT + GRPO | **held-out** 400 | **100% [99.0, 100]** |
 | Shipped ONNX: 4-bit body, 4-bit lm_head (274 MB) | held-out, first 60 | 73.3% |
-| **Shipped ONNX**: 4-bit body, 8-bit lm_head (357 MB) | held-out 400, greedy, ONNX Runtime | **96.5% [94.2, 97.9]** (386/400) |
+| Previous ONNX: 4-bit body, 8-bit lm_head, full vocab (357 MB) | held-out 400, greedy, ONNX Runtime | 96.5% [94.2, 97.9] (386/400) |
+| **Shipped ONNX**: 4-bit body, fp32 lm_head over 453 note tokens (172 MB) | held-out 400, greedy, ONNX Runtime | **93.8% [90.9, 95.7]** (375/400) |
 
 How we got here, honestly: the SFT model's failures on the first real set were concentrated in cases the
 synthetic sampler rarely produced (4–5 flags: 25% of real outputs vs 5% of synthetic; flagged but not
 referred). We changed only the GRPO prompt sampler in response, then measured on a second set of 400 dev
 images that had not been looked at. GRPO's cost is style diversity: notes are faithful but formulaic
 (3 distinct opening sentences across 40 sampled notes). Quantizing the 262k-vocabulary output layer to
-4 bits broke faithfulness (73%), so the shipped model keeps it at 8 bits. Asymmetric 4-bit was worse (68%).
+4 bits broke faithfulness (73%), so it was kept at 8 bits. Asymmetric 4-bit was worse (68%).
 
-**In the browser.** The shipped files run in transformers.js 4.3.2 on single-threaded WASM. Two fixes
+**Making the note faster.** Profiling showed the 8-bit 262k-vocabulary output layer took 89% of each
+token's time: ONNX Runtime has no fast 8-bit kernel there, so it re-expanded 168M weights per token. The
+notes only ever use a few hundred tokens, so the shipped export keeps just the 453 tokens found in the
+SFT training notes and prompts, at fp32, with every other token set to -1e9 (`restrict_lm_head` in
+`llm/export_browser.py`). As a coverage check, the final model generates only 132 distinct tokens over
+2,400 development prompts, 4 of them outside the kept set (`llm/note_vocab.py`; never the held-out set). The download halved (357 to 172 MB). Faithfulness
+on the held-out 400 went from 96.5% to 93.8% (11 more notes fall back to the template); the CIs overlap.
+In a partial check (stopped early), the failing notes we examined were word-for-word identical with a
+full-vocabulary fp32 output layer, which points to rounding in the 4-bit body, not the vocabulary cut.
+
+**In the browser.** The shipped files run in transformers.js 4.3.2. Two fixes
 were needed and are in `llm/export_browser.py`: the WASM build has no kernel for the 4-bit embedding
 lookup (`GatherBlockQuantized`), so it is rewritten with standard ONNX ops (identical outputs), and the
-chat template is embedded in `tokenizer_config.json`. In headless Edge on a desktop CPU, the model
-loads in ~4 s from cache and writes a note in **30–65 s**. A phone will be slower, which is why the
+chat template is embedded in `tokenizer_config.json`. The app uses WebGPU when the browser offers it,
+otherwise 4-thread WASM. Threads need cross-origin isolation, which GitHub Pages can't turn on with
+headers, so the service worker adds COOP/COEP to every response (the page reloads once on first visit).
+Seconds per note for the 3 smoke-test cases in headless Edge, desktop machine shared with other jobs:
+
+| Backend | Notes 1 / 2 / 3 |
+|---|---|
+| Previous model, 1-thread WASM | 30 / 45 / 68 |
+| Shipped model, 4-thread WASM | 18 / 37 / 48 |
+| Shipped model, WebGPU | **17 / 19 / 32** |
+
+A phone will be slower, which is why the
 template note is shown immediately and the AI note replaces it only if, and when, it passes the
 verifier. In that smoke test, 2 of 3 notes passed. The third named a region the classifier never
 reported, the verifier rejected it, and the template stayed.
@@ -184,8 +206,8 @@ reported, the verifier rejected it, and the template stayed.
 - Phone photos of films (CheXphoto) are not evaluated yet.
 - The LLM note adds no diagnostic information. It only rephrases the classifier output, and the
   verifier checks consistency, not clinical correctness.
-- The note model is a ~360 MB one-time download and slow on CPU (30–65 s per note on a desktop),
-  which is why it is opt-in and never blocks the result. Multi-threaded WASM or WebGPU would help.
+- The note model is a ~170 MB one-time download and still takes 15–50 s per note on a desktop
+  (WebGPU or 4-thread WASM), likely longer on a phone. That is why it is opt-in and never blocks the result.
 
 ## Reproduce
 ```bash
