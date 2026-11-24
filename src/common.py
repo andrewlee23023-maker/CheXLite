@@ -17,7 +17,8 @@ MEAN, STD = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
 
 def data_root() -> Path:
-    return Path(os.environ.get("CHEXPERT_ROOT", EVAL_CFG["data_root"]))
+    p = Path(os.environ.get("CHEXPERT_ROOT", EVAL_CFG["data_root"]))
+    return p if p.is_absolute() else REPO / p
 
 
 def seed_everything(seed: int):

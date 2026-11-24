@@ -14,9 +14,9 @@
       "Bash(git merge*)"
     ],
     "allow": [
-      "Bash(python src/train.py)",
-      "Bash(python eval/evaluate.py --split dev)",
-      "Bash(python scripts/ratchet.py *)",
+      "Bash(.venv/Scripts/python src/train.py)",
+      "Bash(.venv/Scripts/python eval/evaluate.py --split dev)",
+      "Bash(.venv/Scripts/python scripts/ratchet.py *)",
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git reset --hard HEAD~1)",

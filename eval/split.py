@@ -21,7 +21,8 @@ CFG = yaml.safe_load((HERE / "eval_config.yaml").read_text())
 
 
 def data_root() -> Path:
-    return Path(os.environ.get("CHEXPERT_ROOT", CFG["data_root"]))
+    p = Path(os.environ.get("CHEXPERT_ROOT", CFG["data_root"]))
+    return p if p.is_absolute() else HERE.parent / p
 
 
 def sha256(p: Path) -> str:

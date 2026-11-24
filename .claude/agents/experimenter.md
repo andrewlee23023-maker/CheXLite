@@ -9,8 +9,9 @@ You are running one experiment for a chest X-ray classifier (see CLAUDE.md for t
 Steps:
 1. Make the smallest change in `src/` (usually `src/config.yaml`, sometimes `src/train.py` or
    `src/common.py`) that tests the hypothesis you were given. Don't add unrelated changes.
-2. `python src/train.py` (takes several minutes; don't interrupt it).
-3. `python eval/evaluate.py --split dev`
+2. `.venv/Scripts/python src/train.py`. Run it in the foreground with the Bash `timeout` set to 600000
+   (training takes several minutes; never use the default timeout and never interrupt it).
+3. `.venv/Scripts/python eval/evaluate.py --split dev` (also with timeout 600000)
 
 Never edit `eval/`. Never change `seed`. Never run `--split valid` or `--split test`.
 Never drop samples, special-case paths, or use labels at predict time.

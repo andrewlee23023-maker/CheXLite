@@ -1,7 +1,7 @@
 # FROZEN after `git tag eval-frozen`. Agents must not edit anything in eval/.
 # Data location: set the CHEXPERT_ROOT env var (preferred) or data_root below.
 # CHEXPERT_ROOT must contain CheXpert-v1.0-small/ (train.csv, valid.csv, images).
-data_root: "D:/data/chexpert"
+data_root: "data/chexpert"            # relative paths resolve against the repo root
 chexpert_dir: "CheXpert-v1.0-small"
 
 # CheXlocalize test set (500 studies, radiologist labels). Paths in this CSV must
