@@ -14,7 +14,7 @@ const SYNONYMS = {
   "Atelectasis": [/atelecta\w*/i, /\bcollapse\w*/i],
   "Cardiomegaly": [/cardiomegaly/i, /enlarged heart/i, /heart (is |appears )?enlarged/i, /cardiac enlargement/i, /enlarged cardiac/i],
   "Consolidation": [/consolidat\w*/i],
-  "Edema": [/\boe?dema\w*/i, /fluid in the lungs/i],
+  "Edema": [/\bo?edema\w*/i, /fluid in the lungs/i],
   "Pleural Effusion": [/effusion\w*/i, /pleural fluid/i, /fluid around the lung/i],
 };
 
@@ -67,6 +67,7 @@ export function templateNote(f) {
   const clear = f.findings.filter((x) => !x.flagged);
   const out = [];
   if (f.refer) out.push("Refer to a radiologist: the screening score is above the referral threshold.");
+  else if (flagged.length) out.push("No referral suggested: the overall score is below the referral threshold, but some areas are worth a closer look.");
   else out.push("No referral suggested: no finding passed the screening threshold. This does not rule out disease.");
   for (const x of flagged) {
     out.push(`${x.name} flagged (score ${x.p.toFixed(2)})${x.region ? `: check the ${x.region}` : ""}.`);
