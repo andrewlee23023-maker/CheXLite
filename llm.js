@@ -30,9 +30,32 @@ export function factsToPrompt(f) {
   return "Model output:\n" + lines.join("\n") + "\nWrite the clinician note.";
 }
 
+// Speed: multithreaded WASM needs cross-origin isolation (sw.js adds the COOP/COEP headers, since
+// GitHub Pages can't). WebGPU is used when the browser offers an adapter, with WASM as the fallback.
+const cores = navigator.hardwareConcurrency || 2;
+export function defaultThreads() {
+  return self.crossOriginIsolated ? Math.max(1, Math.min(4, cores - 1)) : 1;
+}
+async function hasWebGPU() {
+  try { return !!(navigator.gpu && (await navigator.gpu.requestAdapter())); } catch { return false; }
+}
+
 let gen = null;
-export function loadModel(onProgress) {
-  gen ??= pipeline("text-generation", "llm-model", { dtype: "q4", device: "wasm", progress_callback: onProgress });
+export let backend = null;  // "webgpu" | "wasm (N threads)", for the status line and tests
+// opts (tests only): { device: "webgpu" | "wasm", threads: N }
+export function loadModel(onProgress, opts = {}) {
+  gen ??= (async () => {
+    env.backends.onnx.wasm.numThreads = opts.threads ?? defaultThreads();
+    const make = (device) => pipeline("text-generation", "llm-model", { dtype: "q4", device, progress_callback: onProgress });
+    const wantGPU = opts.device ? opts.device === "webgpu" : await hasWebGPU();
+    if (wantGPU) {
+      try { const g = await make("webgpu"); backend = "webgpu"; return g; }
+      catch (e) { console.warn("WebGPU unavailable, using WASM:", e); }
+    }
+    const g = await make("wasm");
+    backend = `wasm (${env.backends.onnx.wasm.numThreads} threads)`;
+    return g;
+  })().catch((e) => { gen = null; throw e; });  // allow a retry after a failed load
   return gen;
 }
 

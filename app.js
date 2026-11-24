@@ -30,7 +30,18 @@ async function init() {
   if (img && new URL(img, location.href).origin === location.origin) {
     analyze(await (await fetch(img)).blob());
   }
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if ("serviceWorker" in navigator) {
+    // First visit: the service worker (which adds the cross-origin-isolation headers) only controls the
+    // page after a reload. Reload once, right away, unless the user has already started analyzing.
+    if (!self.crossOriginIsolated && !navigator.serviceWorker.controller) {
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        let done = false;
+        try { done = sessionStorage.getItem("chexlite-coi") === "1"; sessionStorage.setItem("chexlite-coi", "1"); } catch { done = true; }
+        if (!done && !current) location.reload();
+      });
+    }
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
 }
 
 async function loadSamples() {
@@ -184,7 +195,9 @@ async function aiNote(facts, firstTime) {
     await llm.loadModel((p) => {
       if (p.status === "progress" && p.total > 5e6) status.textContent = `Downloading the note model… ${Math.round(p.progress)}%`;
     });
-    status.textContent = "Writing note on this device (can take a minute; the template is shown meanwhile)…";
+    const nt = (llm.backend.match(/\d+/) || ["1"])[0];
+    const how = llm.backend === "webgpu" ? "on this device's GPU" : `on this device (${nt} CPU thread${nt === "1" ? "" : "s"})`;
+    status.textContent = `Writing note ${how}; the template is shown meanwhile…`;
     const text = await llm.generateNote(facts);
     if (seq !== noteSeq) return;   // a newer image was analyzed meanwhile
     const v = verify(text, facts);
