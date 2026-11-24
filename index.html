@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ChexLite</title>
+  <meta name="description" content="Offline chest X-ray second look for clinics without a radiologist. Runs on this device; nothing is uploaded.">
+  <meta name="theme-color" content="#F6F7F9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0F1215" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <img src="icon.svg" alt="" width="32" height="32">
+      <span>ChexLite</span>
+    </div>
+    <button class="status" id="status" type="button" aria-live="polite">
+      <span class="dot"></span><span id="status-text">Loading model…</span>
+    </button>
+  </header>
+
+  <main id="main">
+    <!-- Empty state -->
+    <section id="view-empty" class="view">
+      <h1>Check a chest X-ray</h1>
+      <p class="lead">Get a second look at 5 common findings and a referral suggestion. It runs on this device and nothing is uploaded.</p>
+      <ol class="steps">
+        <li><b>Frontal view only</b> (PA or AP). Lateral films aren't supported.</li>
+        <li>Use an image file, or photograph the film on a lightbox, filling the frame.</li>
+        <li>Read the result as a prompt to look again, not as a diagnosis.</li>
+      </ol>
+      <div id="samples" class="samples" hidden>
+        <h2>Or try a sample</h2>
+        <div id="sample-list" class="chips"></div>
+      </div>
+    </section>
+
+    <!-- Working state -->
+    <section id="view-busy" class="view" hidden>
+      <div class="skeleton img"></div>
+      <p class="muted center">Analyzing on this device…</p>
+    </section>
+
+    <!-- Error state -->
+    <section id="view-error" class="view" hidden>
+      <div class="card error">
+        <h2>Couldn't read that image</h2>
+        <p id="error-text" class="muted">Try a JPEG or PNG of a frontal chest X-ray.</p>
+      </div>
+    </section>
+
+    <!-- Result state -->
+    <section id="view-result" class="view" hidden>
+      <div id="decision" class="card decision">
+        <div class="decision-kicker" id="decision-kicker"></div>
+        <div class="decision-title" id="decision-title"></div>
+        <div class="decision-sub muted" id="decision-sub"></div>
+      </div>
+
+      <div class="card">
+        <div class="figure">
+          <canvas id="xray" aria-label="Chest X-ray with heatmap"></canvas>
+          <canvas id="heat" aria-hidden="true"></canvas>
+          <span class="orient left">R</span><span class="orient right">L</span>
+        </div>
+        <div class="chips" id="heat-chips" role="radiogroup" aria-label="Heatmap shown"></div>
+        <p class="hint muted">The heatmap shows where the model looked for the selected finding. It's a guide, not an outline of disease.</p>
+      </div>
+
+      <div class="card">
+        <h2>Findings</h2>
+        <ul id="findings" class="findings"></ul>
+        <p class="hint muted">Each bar's midpoint marks the flag threshold. Past the midpoint means flagged.</p>
+      </div>
+
+      <div class="card">
+        <div class="note-head">
+          <h2>Note</h2>
+          <span id="note-badge" class="badge"></span>
+        </div>
+        <p id="note" class="note"></p>
+      </div>
+
+      <p class="disclaimer muted">Screens for atelectasis, cardiomegaly, consolidation, edema and pleural effusion only. It misses other conditions and can be wrong, so clinical judgment comes first. <a href="#" id="about-link">How well does it work?</a></p>
+    </section>
+
+    <dialog id="about">
+      <h2>About ChexLite</h2>
+      <p>A MobileNetV3 classifier (~17 MB) trained on CheXpert, running offline in your browser.</p>
+      <p id="about-metrics" class="muted"></p>
+      <ul class="muted">
+        <li>Referral threshold is set to catch about 95% of studies with any of the 5 findings, so it errs toward referring.</li>
+        <li>Trained on US hospital films. Accuracy drops on phone photos, unusual exposures, children and lateral views.</li>
+        <li>R and L markers assume a standard frontal film (the patient's right on the image's left).</li>
+      </ul>
+      <form method="dialog"><button class="btn secondary">Close</button></form>
+    </dialog>
+  </main>
+
+  <footer class="actions">
+    <label class="btn primary" id="pick-label">
+      <input id="pick" type="file" accept="image/*" hidden>
+      <span id="pick-text">Choose or take X-ray photo</span>
+    </label>
+  </footer>
+
+  <script src="vendor/ort/ort.wasm.min.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

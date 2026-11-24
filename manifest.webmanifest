@@ -1,0 +1,11 @@
+{
+  "name": "ChexLite",
+  "short_name": "ChexLite",
+  "description": "Offline chest X-ray second look for clinics without a radiologist.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6F7F9",
+  "theme_color": "#0E7C7B",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
