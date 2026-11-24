@@ -1,0 +1,23 @@
+# Experiment knobs. The loop may change anything here EXCEPT `seed`.
+# Compute budget (subset size, epochs, max resolution) lives in eval/budget.yaml.
+seed: 42
+arch: mobilenetv3_large_100     # any timm model; keep it phone-sized (<~25 MB fp32)
+pretrained: true
+img_size: 224
+batch_size: 64
+lr: 0.001
+weight_decay: 0.0001
+warmup_frac: 0.05
+uncertain_policy:               # per label: ones | zeros | ignore (CheXpert paper U-* policies)
+  Atelectasis: ones
+  Cardiomegaly: zeros
+  Consolidation: zeros
+  Edema: ones
+  Pleural Effusion: ones
+frontal_only: false
+augment:
+  degrees: 7
+  translate: 0.05
+  scale: [0.95, 1.05]
+num_workers: 6
+amp: true

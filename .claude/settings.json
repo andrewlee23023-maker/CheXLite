@@ -1,0 +1,30 @@
+{
+  "model": "opus",
+  "permissions": {
+    "deny": [
+      "Edit(eval/**)",
+      "Write(eval/**)",
+      "Bash(*--split test*)",
+      "Bash(*--split valid*)",
+      "Bash(*CHEX_ALLOW_TEST*)",
+      "Bash(*train.py --full*)",
+      "Bash(git push*)",
+      "Bash(git tag*)",
+      "Bash(git checkout main*)",
+      "Bash(git merge*)"
+    ],
+    "allow": [
+      "Bash(python src/train.py)",
+      "Bash(python eval/evaluate.py --split dev)",
+      "Bash(python scripts/ratchet.py *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git reset --hard HEAD~1)",
+      "Bash(git checkout -- src/*)",
+      "Bash(git show *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git status*)"
+    ]
+  }
+}

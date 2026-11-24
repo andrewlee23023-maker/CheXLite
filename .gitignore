@@ -1,0 +1,14 @@
+# Licensed data (Stanford AIMI research use agreement): never commit
+data/
+eval/splits/
+*.jpg
+*.png
+!docs/**/*.png
+!app/**/*.png
+
+checkpoints/
+experiments/last_dev_errors.csv
+__pycache__/
+.venv/
+*.onnx
+.claude/settings.local.json

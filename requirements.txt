@@ -1,0 +1,8 @@
+# torch/torchvision: install the CUDA build matching your GPU from https://pytorch.org
+torch>=2.5
+torchvision>=0.20
+timm>=1.0
+numpy
+pandas
+pillow
+pyyaml

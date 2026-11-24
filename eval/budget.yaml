@@ -1,0 +1,11 @@
+# FROZEN compute budget for loop experiments. src/train.py reads this file.
+# Fixing it here means improvements come from ideas, not from training longer.
+# The final model is trained by a human with `python src/train.py --full`.
+loop:
+  train_subset: 40000     # images sampled (seeded) from eval/splits/train.csv
+  epochs: 2
+  max_img_size: 320       # experiments may change resolution up to this
+full:
+  train_subset: null      # all training images
+  epochs: 5
+  max_img_size: 320

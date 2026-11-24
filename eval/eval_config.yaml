@@ -1,0 +1,30 @@
+# FROZEN after `git tag eval-frozen`. Agents must not edit anything in eval/.
+# Data location: set the CHEXPERT_ROOT env var (preferred) or data_root below.
+# CHEXPERT_ROOT must contain CheXpert-v1.0-small/ (train.csv, valid.csv, images).
+data_root: "D:/data/chexpert"
+chexpert_dir: "CheXpert-v1.0-small"
+
+# CheXlocalize test set (500 studies, radiologist labels). Paths in this CSV must
+# resolve relative to CHEXPERT_ROOT, so put the test images folder there.
+test_labels_csv: "chexlocalize/test_labels.csv"
+
+# The 5 CheXpert competition findings
+labels:
+  - Atelectasis
+  - Cardiomegaly
+  - Consolidation
+  - Edema
+  - Pleural Effusion
+
+split_seed: 1337
+dev_fraction: 0.05        # patient-level hold-out from train, used ONLY by the loop
+
+# Clinic referral operating point: refer a study to a radiologist if the
+# "any finding" score >= threshold, where the threshold achieves this sensitivity.
+target_sensitivity: 0.95
+
+bootstrap:
+  dev: 500
+  valid: 2000
+  test: 2000
+  seed: 0
