@@ -22,3 +22,6 @@ llm/data/*
 !llm/data/claude_pairs.summary.json
 llm/runs/
 .venv-export/
+!app/llm-model/onnx/*.onnx
+experiments/runs/
+experiments/STOP
