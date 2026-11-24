@@ -1,0 +1,71 @@
+{
+  "model": "google/gemma-3-270m-it",
+  "facts": "real_facts.jsonl",
+  "zero_shot": true,
+  "n": 400,
+  "pass_rate": 0.0,
+  "pass_ci95": [
+    0.0,
+    0.0095
+  ],
+  "failure_types": {
+    "missing referral": 316,
+    "flagged Atelectasis": 235,
+    "flagged Consolidation": 191,
+    "flagged Edema": 179,
+    "flagged Pleural": 170,
+    "flagged Cardiomegaly": 128,
+    "missing no-referral": 84
+  },
+  "mean_words": 26.6,
+  "gpu_seconds_per_note": 0.17,
+  "failed_examples": [
+    {
+      "prompt": "Model output:\nrefer: no (score 0.24, threshold 0.26)\nAtelectasis: 0.24 / 0.26 not flagged\nCardiomegaly: 0.01 / 0.09 not flagged\nConsolidation: 0.03 / 0.06 not flagged\nEdema: 0.24 / 0.29 not flagged\nPleural effusion: 0.11 / 0.44 not flagged\nWrite the clinician note.",
+      "note": "Okay, I understand the rules. I will follow them and provide a clear and concise clinical note for a clinician at a clinic without a radiologist.",
+      "problems": [
+        "missing no-referral statement"
+      ]
+    },
+    {
+      "prompt": "Model output:\nrefer: yes (score 0.49, threshold 0.26)\nAtelectasis: 0.25 / 0.26 not flagged\nCardiomegaly: 0.01 / 0.09 not flagged\nConsolidation: 0.03 / 0.06 not flagged\nEdema: 0.02 / 0.29 not flagged\nPleural effusion: 0.49 / 0.44 FLAGGED, central lower chest\nWrite the clinician note.",
+      "note": "Okay, I understand the rules. I will follow them and provide a clear and concise clinical note for a clinician at a clinic without a radiologist.",
+      "problems": [
+        "missing referral recommendation",
+        "flagged Pleural Effusion not reported"
+      ]
+    },
+    {
+      "prompt": "Model output:\nrefer: yes (score 0.61, threshold 0.26)\nAtelectasis: 0.45 / 0.26 FLAGGED, left middle zone\nCardiomegaly: 0.49 / 0.09 FLAGGED, central middle chest\nConsolidation: 0.11 / 0.06 FLAGGED, central middle chest\nEdema: 0.24 / 0.29 not flagged\nPleural effusion: 0.61 / 0.44 FLAGGED, left middle zone\nWrite the clinician note.",
+      "note": "Okay, I understand the rules. I will follow them and provide a clear and concise clinical note for a clinician at a clinic without a radiologist.",
+      "problems": [
+        "missing referral recommendation",
+        "flagged Atelectasis not reported",
+        "flagged Cardiomegaly not reported",
+        "flagged Consolidation not reported",
+        "flagged Pleural Effusion not reported"
+      ]
+    },
+    {
+      "prompt": "Model output:\nrefer: yes (score 0.89, threshold 0.26)\nAtelectasis: 0.44 / 0.26 FLAGGED, central middle chest\nCardiomegaly: 0.05 / 0.09 not flagged\nConsolidation: 0.18 / 0.06 FLAGGED, central middle chest\nEdema: 0.51 / 0.29 FLAGGED, right middle zone\nPleural effusion: 0.89 / 0.44 FLAGGED, central middle chest\nWrite the clinician note.",
+      "note": "Okay, I understand the rules. I will follow them and provide a clear and concise clinical note for a clinician at a clinic without a radiologist.",
+      "problems": [
+        "missing referral recommendation",
+        "flagged Atelectasis not reported",
+        "flagged Consolidation not reported",
+        "flagged Edema not reported",
+        "flagged Pleural Effusion not reported"
+      ]
+    },
+    {
+      "prompt": "Model output:\nrefer: yes (score 0.65, threshold 0.26)\nAtelectasis: 0.21 / 0.26 not flagged\nCardiomegaly: 0.64 / 0.09 FLAGGED, central middle chest\nConsolidation: 0.07 / 0.06 FLAGGED, central middle chest\nEdema: 0.65 / 0.29 FLAGGED, right middle zone\nPleural effusion: 0.27 / 0.44 not flagged\nWrite the clinician note.",
+      "note": "Okay, I understand the rules. I will follow them and provide a clear and concise clinical note for a clinician at a clinic without a radiologist.",
+      "problems": [
+        "missing referral recommendation",
+        "flagged Cardiomegaly not reported",
+        "flagged Consolidation not reported",
+        "flagged Edema not reported"
+      ]
+    }
+  ]
+}

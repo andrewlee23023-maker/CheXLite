@@ -25,6 +25,47 @@ for lvl in ["upper", "middle", "lower"]:
     REGIONS.append(f"central {lvl} chest")
 
 
+def cam_region(cam):
+    """Python twin of camRegion() in app/note.js. cam: 2-D array (h, w) normalised to [0, 1]."""
+    h, w = cam.shape
+    sy = s = mr = mc = ml = 0.0
+    for i in range(h):
+        for j in range(w):
+            v = float(cam[i, j])
+            if v < 0.5:
+                continue
+            x = (j + 0.5) / w
+            sy += v * (i + 0.5) / h
+            s += v
+            if x < 1 / 3:
+                mr += v
+            elif x > 2 / 3:
+                ml += v
+            else:
+                mc += v
+    if s == 0:
+        return None
+    y = sy / s
+    lvl = "upper" if y < 1 / 3 else "middle" if y < 2 / 3 else "lower"
+    if mr >= 0.3 * s and ml >= 0.3 * s:
+        return f"both {lvl} zones"
+    if mc >= mr and mc >= ml:
+        return f"central {lvl} chest"
+    return f"right {lvl} zone" if mr > ml else f"left {lvl} zone"
+
+
+def build_facts(probs, cams, meta):
+    """Python twin of buildFacts() in app/note.js. probs: [5], cams: [5, h, w]."""
+    findings = []
+    for k, label in enumerate(meta["labels"]):
+        p, thr = float(probs[k]), float(meta["flag_thresholds"][label])
+        findings.append({"label": label, "name": DISPLAY[label], "p": r2(p), "thr": r2(thr), "flagged": p >= thr,
+                         "region": cam_region(cams[k])})
+    any_score = float(max(probs))
+    return {"refer": any_score >= meta["refer_threshold"], "any_score": r2(any_score),
+            "refer_threshold": r2(meta["refer_threshold"]), "findings": findings}
+
+
 def r2(x):
     # JS Math.round(x*100)/100 rounds half up; Python round() is banker's rounding
     return math.floor(x * 100 + 0.5) / 100

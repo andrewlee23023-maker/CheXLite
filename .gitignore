@@ -18,3 +18,6 @@ app/_local/
 .claude/skills/
 skills-lock.json
 llm/data/
+!llm/data/claude_pairs.jsonl
+!llm/data/claude_pairs.summary.json
+llm/runs/
