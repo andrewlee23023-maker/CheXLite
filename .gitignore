@@ -1,5 +1,5 @@
 # Licensed data (Stanford AIMI research use agreement): never commit
-data/
+/data/
 eval/splits/
 *.jpg
 *.png
@@ -17,7 +17,7 @@ app/_local/
 .agents/
 .claude/skills/
 skills-lock.json
-llm/data/
+llm/data/*
 !llm/data/claude_pairs.jsonl
 !llm/data/claude_pairs.summary.json
 llm/runs/

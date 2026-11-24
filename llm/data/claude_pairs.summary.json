@@ -1,0 +1,18 @@
+{
+  "requested": 1500,
+  "returned": 1500,
+  "kept": 1454,
+  "verifier_pass_rate": 0.9693,
+  "failure_types": {
+    "missing referral": 16,
+    "flagged Consolidation": 10,
+    "flagged Atelectasis": 8,
+    "flagged Edema": 6,
+    "flagged Pleural": 4,
+    "flagged Cardiomegaly": 3
+  },
+  "input_tokens": 301451,
+  "output_tokens": 125381,
+  "est_cost_usd": 3.71,
+  "model": "claude-opus-5-5"
+}
