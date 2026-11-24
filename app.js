@@ -151,24 +151,57 @@ function render() {
   show("result");
 }
 
+const AI_KEY = "chexlite-ai-note";
+const aiEnabled = () => { try { return localStorage.getItem(AI_KEY) === "on"; } catch { return false; } };
+
+let noteSeq = 0;
 async function renderNote(facts) {
+  noteSeq++;
+  $("ai-note-status").hidden = true;
   const badge = $("note-badge");
   $("note").textContent = templateNote(facts);
   badge.textContent = "Template";
   badge.className = "badge";
-  // The on-device LLM note (llm.js) is optional: show it only if the verifier passes.
+  const btn = $("ai-note-btn");
+  btn.hidden = aiEnabled();
+  btn.onclick = () => {
+    try { localStorage.setItem(AI_KEY, "on"); } catch { /* private mode: enable for this session only */ }
+    btn.hidden = true;
+    aiNote(facts, true);
+  };
+  if (aiEnabled()) aiNote(facts, false);
+}
+
+// The on-device LLM note is optional and opt-in: shown only if the verifier passes, else the template stays.
+async function aiNote(facts, firstTime) {
+  const seq = noteSeq;
+  const status = $("ai-note-status");
+  const badge = $("note-badge");
   try {
-    const { generateNote } = await import("./llm.js");
-    const text = await generateNote(facts);
+    const llm = await import("./llm.js");
+    status.hidden = false;
+    status.textContent = firstTime ? "Downloading the note model…" : "Writing note…";
+    await llm.loadModel((p) => {
+      if (p.status === "progress" && p.total > 5e6) status.textContent = `Downloading the note model… ${Math.round(p.progress)}%`;
+    });
+    status.textContent = "Writing note…";
+    const text = await llm.generateNote(facts);
+    if (seq !== noteSeq) return;   // a newer image was analyzed meanwhile
     const v = verify(text, facts);
     if (v.ok) {
       $("note").textContent = text;
       badge.textContent = "AI note · checked against model output";
       badge.className = "badge verified";
+      status.hidden = true;
     } else {
       console.warn("LLM note rejected:", v.problems);
+      status.textContent = "The AI note didn't match the model output, so the template is shown.";
     }
-  } catch { /* LLM not bundled or failed: template stays */ }
+  } catch (e) {
+    console.warn("LLM unavailable:", e);
+    status.hidden = false;
+    status.textContent = "AI note unavailable, so the template is shown.";
+  }
 }
 
 function drawXray() {
