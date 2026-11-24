@@ -1,0 +1,57 @@
+{
+  "model": "runs/gemma270m-v1",
+  "facts": "real_facts.jsonl",
+  "zero_shot": false,
+  "n": 400,
+  "pass_rate": 0.92,
+  "pass_ci95": [
+    0.8892,
+    0.9428
+  ],
+  "failure_types": {
+    "flagged Pleural": 19,
+    "flagged Cardiomegaly": 6,
+    "flagged Consolidation": 5,
+    "region \"central": 2,
+    "region \"both": 1
+  },
+  "mean_words": 55.6,
+  "gpu_seconds_per_note": 0.305,
+  "failed_examples": [
+    {
+      "prompt": "Model output:\nrefer: yes (score 0.82, threshold 0.26)\nAtelectasis: 0.42 / 0.26 FLAGGED, left middle zone\nCardiomegaly: 0.09 / 0.09 FLAGGED, central middle chest\nConsolidation: 0.11 / 0.06 FLAGGED, left middle zone\nEdema: 0.82 / 0.29 FLAGGED, central middle chest\nPleural effusion: 0.63 / 0.44 FLAGGED, right upper zone\nWrite the clinician note.",
+      "note": "Referral to a radiologist is recommended. Possible atelectasis was flagged; check the left middle zone. Possible cardiomegaly was flagged; check the central middle chest. Possible consolidation was flagged; check the left middle zone. Possible edema was flagged; check the central middle chest. This is a screening aid only.",
+      "problems": [
+        "flagged Pleural Effusion not reported"
+      ]
+    },
+    {
+      "prompt": "Model output:\nrefer: no (score 0.16, threshold 0.26)\nAtelectasis: 0.14 / 0.26 not flagged\nCardiomegaly: 0.12 / 0.09 FLAGGED, central middle chest\nConsolidation: 0.02 / 0.06 not flagged\nEdema: 0.07 / 0.29 not flagged\nPleural effusion: 0.16 / 0.44 not flagged\nWrite the clinician note.",
+      "note": "Referral is not suggested: the overall score 0.16 is below the threshold of 0.26. No flag for atelectasis, cardiomegaly, consolidation, edema or pleural effusion. This screens for five findings only. It is not a diagnosis and does not replace clinical judgment.",
+      "problems": [
+        "flagged Cardiomegaly not reported"
+      ]
+    },
+    {
+      "prompt": "Model output:\nrefer: yes (score 0.81, threshold 0.26)\nAtelectasis: 0.33 / 0.26 FLAGGED, central middle chest\nCardiomegaly: 0.29 / 0.09 FLAGGED, central middle chest\nConsolidation: 0.08 / 0.06 FLAGGED, right upper zone\nEdema: 0.81 / 0.29 FLAGGED, central middle chest\nPleural effusion: 0.53 / 0.44 FLAGGED, right upper zone\nWrite the clinician note.",
+      "note": "Referral to a radiologist is recommended. Possible atelectasis was flagged; check the central middle chest. Possible cardiomegaly was flagged; check the central middle chest. Possible consolidation was flagged; check the right upper zone. Possible edema was flagged; check the central middle chest. This is a screening aid only.",
+      "problems": [
+        "flagged Pleural Effusion not reported"
+      ]
+    },
+    {
+      "prompt": "Model output:\nrefer: yes (score 0.79, threshold 0.26)\nAtelectasis: 0.19 / 0.26 not flagged\nCardiomegaly: 0.26 / 0.09 FLAGGED, central middle chest\nConsolidation: 0.12 / 0.06 FLAGGED, central middle chest\nEdema: 0.79 / 0.29 FLAGGED, central middle chest\nPleural effusion: 0.77 / 0.44 FLAGGED, central middle chest\nWrite the clinician note.",
+      "note": "Referral to a radiologist is recommended. Possible cardiomegaly was flagged; check the central middle chest. Possible consolidation was flagged; check the central middle chest. Possible edema was flagged; check the central middle chest. Atelectasis and pleural effusion were not flagged. This is a screening aid only.",
+      "problems": [
+        "flagged Pleural Effusion not reported"
+      ]
+    },
+    {
+      "prompt": "Model output:\nrefer: no (score 0.14, threshold 0.26)\nAtelectasis: 0.01 / 0.26 not flagged\nCardiomegaly: 0.03 / 0.09 not flagged\nConsolidation: 0.07 / 0.06 FLAGGED, right middle zone\nEdema: 0.14 / 0.29 not flagged\nPleural effusion: 0.08 / 0.44 not flagged\nWrite the clinician note.",
+      "note": "Referral is not suggested: the overall score 0.14 is below the threshold of 0.26. No flag for atelectasis, cardiomegaly, consolidation, edema or pleural effusion. This screens for five findings only. It is not a diagnosis and does not replace clinical judgment.",
+      "problems": [
+        "flagged Consolidation not reported"
+      ]
+    }
+  ]
+}

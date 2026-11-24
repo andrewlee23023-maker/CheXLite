@@ -1,6 +1,6 @@
 """GRPO on top of the SFT note model, with the deterministic faithfulness verifier as reward.
 
-Prompts are fresh synthetic facts (new seed), never the real-output eval set. For each prompt we sample
+Prompts are fresh synthetic facts (new seed, balanced sampler), never the real-output eval sets. For each prompt we sample
 G notes, score each with note_rules.verify(), and use group-normalized advantages
 (r - mean) / std. Groups with zero variance carry no signal and are skipped. Single on-policy update
 per batch (importance ratio = 1, so no clipping is needed), plus a per-token k3 KL penalty against the
@@ -76,7 +76,7 @@ def main():
     log, t0 = [], time.time()
 
     for step in range(a.steps):
-        facts = [sample_facts(rng) for _ in range(a.prompts)]
+        facts = [sample_facts(rng, balanced=True) for _ in range(a.prompts)]
         texts = [tok.apply_chat_template([{"role": "user", "content": facts_to_prompt(f)}],
                                          add_generation_prompt=True, tokenize=False) for f in facts]
         enc = tok(texts, return_tensors="pt", padding=True, add_special_tokens=False).to(dev)

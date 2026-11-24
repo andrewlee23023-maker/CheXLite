@@ -64,15 +64,27 @@ CLOSER = [
 ]
 
 
-def sample_facts(rng):
+def sample_facts(rng, balanced=False):
+    """Synthetic classifier output. balanced=True (used for GRPO prompts) draws the number of flags
+    uniformly from 0-5 and often keeps flagged scores below the referral threshold, the two cases the
+    SFT model got wrong because the default sampler rarely produces them."""
     thrs = META["flag_thresholds"]
     rt = r2(META["refer_threshold"])
     mode = rng.random()
-    want = {l: rng.random() < (0.15 if mode < 0.35 else 0.4) for l in LABELS}
+    if balanced:
+        low = rng.random() < 0.2
+        pool = [l for l in LABELS if r2(thrs[l]) + 0.02 < rt] if low else LABELS
+        chosen = set(rng.sample(pool, rng.randint(1 if low else 0, len(pool))))
+        want = {l: l in chosen for l in LABELS}
+    else:
+        want = {l: rng.random() < (0.15 if mode < 0.35 else 0.4) for l in LABELS}
+        low = False
     findings = []
     for l in LABELS:
         t = r2(thrs[l])
-        if want[l]:
+        if want[l] and low and t + 0.01 < rt - 0.01:
+            p = r2(rng.uniform(t + 0.01, rt - 0.01))     # flagged, but below the referral threshold
+        elif want[l]:
             p = r2(rng.uniform(t + 0.01, min(0.99, t + 0.6)))
         else:
             p = r2(rng.uniform(0.0, max(0.0, t - 0.01)))

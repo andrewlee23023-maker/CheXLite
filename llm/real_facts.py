@@ -6,6 +6,7 @@ Dev patients are never in the classifier's training data, and these facts are ne
 training data (which is synthetic).
 
     python llm/real_facts.py --n 400 --seed 0
+    python llm/real_facts.py --n 400 --seed 1 --exclude llm/data/real_facts.jsonl --out llm/data/real_facts_heldout.jsonl
 """
 import argparse
 import json
@@ -34,12 +35,14 @@ def main():
     ap.add_argument("--n", type=int, default=400)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default=str(HERE / "data" / "real_facts.jsonl"))
+    ap.add_argument("--exclude", nargs="*", default=[], help="facts files whose images must not be reused")
     a = ap.parse_args()
 
     meta = json.loads((APP / "meta.json").read_text())
     sess = ort.InferenceSession(str(APP / "chexlite.onnx"), providers=["CPUExecutionProvider"])
     dev = pd.read_csv(MAIN / "eval" / "splits" / "dev.csv")
-    dev = dev[dev["Frontal/Lateral"] == "Frontal"].sample(n=a.n, random_state=a.seed)
+    used = {json.loads(l)["path"] for f in a.exclude for l in open(f, encoding="utf-8")}
+    dev = dev[(dev["Frontal/Lateral"] == "Frontal") & ~dev["Path"].isin(used)].sample(n=a.n, random_state=a.seed)
 
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
