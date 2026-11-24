@@ -2,7 +2,7 @@
 // The model sees ONLY the structured classifier output (never the image) and its note is shown only if
 // note.js verify() passes; otherwise the app keeps the template. Everything is served from this origin,
 // and the service worker caches it after the first load, so it works offline from then on.
-import { pipeline, env } from "./vendor/tjs/transformers.min.js";
+import { pipeline, env } from "./vendor/tjs/transformers.js";
 
 const BASE = new URL("./", import.meta.url).href;
 // Serve the model from this origin through the "remote" code path: in transformers.js 4.3.2 the
