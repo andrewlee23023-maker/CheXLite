@@ -3,3 +3,4 @@ cd77835	mobilenetv3_large_100 224px baseline (U-ones Atel/Edema/Eff, U-zeros Car
 5e8d017	Cardiomegaly uncertain policy zeros -> ignore	0.7986	0.7935	0.8046	0.839	1	2026-11-24T00:28:17
 d975667	Pleural Effusion uncertain policy ones -> ignore	0.7961	0.7907	0.8017	0.841	0	2026-11-24T00:44:52
 9ae23f5	img_size 224 -> 320	0.7990	0.7935	0.8051	0.840	0	2026-11-24T01:19:18
+e27e33a	BCE pos_weight clip(neg/pos, 5)	0.7956	0.7902	0.8013	0.838	0	2026-11-24T01:25:23
