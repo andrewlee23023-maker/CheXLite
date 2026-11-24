@@ -30,11 +30,12 @@ Each iteration:
 5. `git add src && git commit -m "exp: <short idea>"`
 6. Spawn **auditor** on the commit. On FAIL: `git reset --hard HEAD~1`, note the reason in NOTES.md, move on.
 7. `.venv/Scripts/python scripts/ratchet.py "<short idea>"`. It keeps or reverts the commit and logs the result. Don't second-guess it.
-8. Every 5 iterations, update `experiments/NOTES.md` (what helps, what hurts, what's left to try) and commit it.
+8. When the number of rows in `experiments/log.tsv` is a multiple of 5, update `experiments/NOTES.md` (what helps, what hurts, what's left to try) and commit it.
 
 Stop when any of these holds: the iteration budget given in the prompt is used up, 6 iterations in a
 row haven't improved, or an improvement falls inside the previous best's CI three times in a row
-(that's noise, not progress).
+(that's noise, not progress). To stop, write the reason to `experiments/STOP`.
+The headless runner is `scripts/run_loop.sh N` (one fresh process per iteration).
 
 ## Useful commands
 Always use the venv interpreter `.venv/Scripts/python` and a Bash timeout of 600000 for train, eval and ratchet.

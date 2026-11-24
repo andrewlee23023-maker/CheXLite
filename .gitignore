@@ -12,3 +12,5 @@ __pycache__/
 .venv/
 *.onnx
 .claude/settings.local.json
+experiments/runs/
+experiments/STOP
