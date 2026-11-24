@@ -39,9 +39,9 @@ def load_pairs(paths, n_template, seed):
 
 
 def encode(tok, prompt, note, max_len):
-    p_ids = tok.apply_chat_template([{"role": "user", "content": prompt}], add_generation_prompt=True, tokenize=True)
-    if isinstance(p_ids, dict):
-        p_ids = p_ids["input_ids"]
+    # Render to text, then tokenize: identical to how eval_llm.py builds inference prompts.
+    p_text = tok.apply_chat_template([{"role": "user", "content": prompt}], add_generation_prompt=True, tokenize=False)
+    p_ids = tok(p_text, add_special_tokens=False)["input_ids"]
     n_ids = tok(note + "<end_of_turn>", add_special_tokens=False)["input_ids"]
     ids = (p_ids + n_ids)[:max_len]
     labels = ([-100] * len(p_ids) + n_ids)[:max_len]
