@@ -101,13 +101,16 @@ function render() {
 
   const dec = $("decision");
   dec.className = `card decision ${facts.refer ? "refer" : "clear"}`;
+  const names = flagged.map((f) => f.name.toLowerCase()).join(", ");
   $("decision-kicker").textContent = facts.refer ? "Suggest referral" : "No referral suggested";
   $("decision-title").textContent = facts.refer
-    ? (flagged.length ? `Check ${flagged.map((f) => f.name.toLowerCase()).join(", ")}` : "Get a radiologist read")
-    : "Nothing flagged";
+    ? (flagged.length ? `Check ${names}` : "Get a radiologist read")
+    : (flagged.length ? `Take a closer look: ${names}` : "Nothing flagged");
   $("decision-sub").textContent = facts.refer
     ? "Send this study to a radiologist for review."
-    : "This doesn't rule out disease. Use clinical judgment.";
+    : flagged.length
+      ? "Below the referral threshold. Review the highlighted areas and use clinical judgment."
+      : "This doesn't rule out disease. Use clinical judgment.";
 
   drawXray();
   const chips = $("heat-chips");

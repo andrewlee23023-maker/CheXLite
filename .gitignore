@@ -17,3 +17,4 @@ app/_local/
 .agents/
 .claude/skills/
 skills-lock.json
+llm/data/
