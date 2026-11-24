@@ -1,0 +1,17 @@
+{
+  "sha256": {
+    "train.csv": "c3c094d141df0d31ddf9935ef8be1a827098c7b06d9cb4a3cbefd2ad57fe11d2",
+    "dev.csv": "2d2fa81a46629a51bc99fbd94f7b031cecad3709daa96286bab3759b3fc27a12",
+    "valid.csv": "337c61ef0612abe6cfd47c3dc8e786b47bfa38115da66e0e0ffaafa00458f749"
+  },
+  "rows": {
+    "train.csv": 212190,
+    "dev.csv": 11224,
+    "valid.csv": 234
+  },
+  "patients": {
+    "train": 61313,
+    "dev": 3227
+  },
+  "split_seed": 1337
+}
