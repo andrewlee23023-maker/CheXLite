@@ -10,6 +10,9 @@ const BASE = new URL("./", import.meta.url).href;
 // load. Nothing leaves this origin; files are fetched as BASE + "llm-model/" + filename.
 env.allowLocalModels = false;
 env.allowRemoteModels = true;
+// The service worker already caches the model for offline use; a second copy in transformers.js's own
+// cache would double storage and keep stale weights after an update.
+env.useBrowserCache = false;
 env.remoteHost = BASE;
 env.remotePathTemplate = "{model}/";
 env.backends.onnx.wasm.wasmPaths = {
