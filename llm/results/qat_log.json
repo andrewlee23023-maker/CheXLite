@@ -1,0 +1,32 @@
+{
+  "base_select_pass": 0.9466666666666667,
+  "steps": 398,
+  "args": {
+    "model": "C:\\Users\\andre\\chexlite-app\\llm\\runs\\gemma270m-grpo",
+    "out": "runs/gemma270m-qat",
+    "synthetic": 2000,
+    "epochs": 1,
+    "evals": 2,
+    "lr": 0.0001,
+    "r": 16,
+    "bs": 8,
+    "seed": 0
+  },
+  "n_targets": 3185,
+  "evals": [
+    {
+      "epoch": 1,
+      "step": 199,
+      "select_pass": 0.9666666666666667
+    },
+    {
+      "epoch": 1,
+      "step": 398,
+      "select_pass": 0.9666666666666667
+    }
+  ],
+  "best": {
+    "select_pass": 0.9666666666666667,
+    "step": 199
+  }
+}

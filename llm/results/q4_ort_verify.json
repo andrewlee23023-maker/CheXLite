@@ -4,8 +4,8 @@
     "lm_head": "fp32 over 453 note tokens"
   },
   "facts": "real_facts_heldout.jsonl",
-  "q4_verifier_pass": 375,
+  "q4_verifier_pass": 381,
   "n": 400,
-  "pass_rate": 0.9375,
-  "example": "Referral to a radiologist is recommended (overall score 0.76 vs threshold 0.26). Atelectasis flagged (score 0.34). The model flags consolidation in the right upper zone (score 0.07). Pleural effusion flagged (score 0.76). The model did not flag edema. This screens for five findings only. It is not a diagnosis and does not replace a radiologist read."
+  "pass_rate": 0.9525,
+  "example": "Referral to a radiologist is recommended (overall score 0.76 vs threshold 0.26). Consolidation flagged (score 0.07): check the right upper zone. Atelectasis is flagged with a score of 0.34; look closely at the right upper zone. Pleural effusion is flagged with a score of 0.76; look closely at the right middle zone. The model did not flag cardiomegaly or edema. This screens for five findings only. It is not a diagnosis and does not replace clinical judgment."
 }

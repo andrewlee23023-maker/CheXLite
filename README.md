@@ -72,6 +72,9 @@ structured output only (scores, thresholds, refer decision, region names). It ne
 - *GRPO:* on top of SFT. The reward is the verifier (+1 for pass, −0.25 per violated rule), with a
   KL penalty against the SFT model. Prompts come from a rebalanced synthetic sampler covering the cases
   SFT got wrong: 4–5 flags, and flagged but not referred.
+- *Quantization-aware fine-tuning:* LoRA trained through the exact 4-bit rounding of the export, on the
+  full-precision model's own verified notes for 1,200 real classifier outputs on new dev images plus
+  2,000 synthetic prompts (see below).
 - *Export:* ONNX, 4-bit weights (MatMulNBits, block 32). The output layer keeps only the 453 tokens the
   note model was trained on, at full precision (see below). Files are under 90 MB so GitHub Pages can serve them.
   It runs in transformers.js on WebGPU when available, otherwise multithreaded WASM.
@@ -139,9 +142,10 @@ classifier outputs come from frontal dev images the classifier never trained on.
 | Gemma 270M, SFT | **held-out** 400 (different dev images, never inspected) | 90.0% [86.7, 92.6] |
 | Gemma 270M, SFT + GRPO | real outputs, 400 (inspected) | 100% [99.0, 100] |
 | Gemma 270M, SFT + GRPO | **held-out** 400 | **100% [99.0, 100]** |
-| Shipped ONNX: 4-bit body, 4-bit lm_head (274 MB) | held-out, first 60 | 73.3% |
+| Earlier ONNX: 4-bit body, 4-bit lm_head (274 MB) | held-out, first 60 | 73.3% |
 | Previous ONNX: 4-bit body, 8-bit lm_head, full vocab (357 MB) | held-out 400, greedy, ONNX Runtime | 96.5% [94.2, 97.9] (386/400) |
-| **Shipped ONNX**: 4-bit body, fp32 lm_head over 453 note tokens (172 MB) | held-out 400, greedy, ONNX Runtime | **93.8% [90.9, 95.7]** (375/400) |
+| Small-vocab ONNX: 4-bit body, fp32 lm_head over 453 note tokens (172 MB) | held-out 400, greedy, ONNX Runtime | 93.8% [90.9, 95.7] (375/400) |
+| **Shipped ONNX**: same, after quantization-aware fine-tuning (172 MB) | held-out 400, greedy, ONNX Runtime | **95.3% [92.7, 96.9]** (381/400) |
 
 How we got here, honestly: the SFT model's failures on the first real set were concentrated in cases the
 synthetic sampler rarely produced (4–5 flags: 25% of real outputs vs 5% of synthetic; flagged but not
@@ -155,14 +159,27 @@ token's time: ONNX Runtime has no fast 8-bit kernel there, so it re-expanded 168
 notes only ever use a few hundred tokens, so the shipped export keeps just the 453 tokens found in the
 SFT training notes and prompts, at fp32, with every other token set to -1e9 (`restrict_lm_head` in
 `llm/export_browser.py`). As a coverage check, the final model generates only 132 distinct tokens over
-2,400 development prompts, 4 of them outside the kept set (`llm/note_vocab.py`; never the held-out set). The download halved (357 to 172 MB). Faithfulness
-on the held-out 400 went from 96.5% to 93.8% (11 more notes fall back to the template); the CIs overlap.
+2,400 development prompts, 4 of them outside the kept set (`llm/note_vocab.py`; never the held-out
+set). The download halved (357 to 172 MB). Faithfulness on the held-out 400 first went from 96.5% to
+93.8% (11 more notes fall back to the template); the CIs overlap.
 The vocabulary cut is not the cause: a control with the same 4-bit body and a full 262k-vocabulary fp32
 output layer writes word-for-word the same note on all 25 failing cases, so it also scores 375/400
 (`llm/results/vocab_ablation.json`). The difference from 96.5% comes from replacing the 8-bit output
 layer with fp32, which flips a few near-tie greedy choices in the 4-bit model. Failures: a flagged
 finding left out (13, mostly pleural effusion), a region the classifier did not report (9), an
 unflagged finding called present (3).
+
+**Training through the 4-bit rounding.** At full precision the note model passes 100% of these cases, so
+every failure is caused by compression, and GRPO at full precision would see rewards that are almost all
+1. Instead, `llm/qat.py` trains LoRA adapters through an exact simulation of the export's 4-bit rounding
+(`llm/q4sim.py`; it reproduces 99.998% of ONNX Runtime's quantized weights, including its tie-breaking
+and round-half-up, and agrees with ORT on 391/400 per-case verdicts). Straight-through gradients reach
+the adapters, which are merged before export, so the browser runs exactly the weights that were trained.
+Targets are the full-precision model's own verified notes (self-distillation) on 1,200 new real
+classifier outputs from dev images in neither earlier set, plus 2,000 synthetic prompts. A further 300
+new dev cases chose the checkpoint (simulated 4-bit: 94.7% to 96.7%); the held-out 400 were scored once
+afterwards: 375 to 381 passing (93.8% to 95.3%). The remaining gap to the 8-bit export (96.5%) is within
+noise, and the download stays half the size.
 
 **In the browser.** The shipped files run in transformers.js 4.3.2. Two fixes
 were needed and are in `llm/export_browser.py`: the WASM build has no kernel for the 4-bit embedding
@@ -225,7 +242,10 @@ python eval/evaluate.py --split valid
 python llm/make_pairs.py && python llm/finetune.py && python llm/grpo.py
 python llm/real_facts.py --n 400 --seed 1 --exclude llm/data/real_facts.jsonl --out llm/data/real_facts_heldout.jsonl
 python llm/eval_llm.py --model llm/runs/gemma270m-grpo --facts llm/data/real_facts_heldout.jsonl
-PYTHONNOUSERSITE=1 .venv-export/Scripts/python llm/export_browser.py --model llm/runs/gemma270m-grpo
+python llm/real_facts.py --n 1500 --seed 2 --exclude llm/data/real_facts.jsonl llm/data/real_facts_heldout.jsonl --out llm/data/real_facts_dev2.jsonl
+head -1200 llm/data/real_facts_dev2.jsonl > llm/data/dev2_train.jsonl; tail -300 llm/data/real_facts_dev2.jsonl > llm/data/dev2_select.jsonl
+python llm/qat.py --out llm/runs/gemma270m-qat   # quantization-aware fine-tuning
+PYTHONNOUSERSITE=1 .venv-export/Scripts/python llm/export_browser.py --model llm/runs/gemma270m-qat/model --facts llm/data/real_facts_heldout.jsonl --verify-n 400
 # App: serve app/ over http(s) and open index.html
 ```
 

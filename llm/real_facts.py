@@ -2,8 +2,9 @@
 
 Runs the exported ONNX model (the exact graph the app runs: probs + in-graph Grad-CAM) on frontal
 dev images, preprocessed like training, and converts outputs to facts with the same logic as the app.
-Dev patients are never in the classifier's training data, and these facts are never in the LLM's
-training data (which is synthetic).
+Dev patients are never in the classifier's training data. SFT and GRPO use only synthetic facts; the
+quantization-aware step (llm/qat.py) trains on dev2_train (seed 2, excluding both evaluation sets).
+The inspected set (seed 0) and the held-out set (seed 1) are never trained on.
 
     python llm/real_facts.py --n 400 --seed 0
     python llm/real_facts.py --n 400 --seed 1 --exclude llm/data/real_facts.jsonl --out llm/data/real_facts_heldout.jsonl
