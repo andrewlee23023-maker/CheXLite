@@ -1,0 +1,13 @@
+{
+  "what": "Shipped ONNX (4-bit body, fp32 lm_head over 453 note tokens) vs control with the same 4-bit body and a full 262k-vocab fp32 lm_head, greedy, held-out 400",
+  "n": 400,
+  "shipped_pass": 375,
+  "shipped_fail": 25,
+  "control_pass_on_shipped_failures": 0,
+  "identical_notes_on_shipped_failures": 25,
+  "failure_types": {
+    "region not reported by classifier": 9,
+    "omitted flagged finding": 13,
+    "unflagged finding called present": 3
+  }
+}

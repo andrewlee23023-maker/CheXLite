@@ -157,8 +157,12 @@ SFT training notes and prompts, at fp32, with every other token set to -1e9 (`re
 `llm/export_browser.py`). As a coverage check, the final model generates only 132 distinct tokens over
 2,400 development prompts, 4 of them outside the kept set (`llm/note_vocab.py`; never the held-out set). The download halved (357 to 172 MB). Faithfulness
 on the held-out 400 went from 96.5% to 93.8% (11 more notes fall back to the template); the CIs overlap.
-In a partial check (stopped early), the failing notes we examined were word-for-word identical with a
-full-vocabulary fp32 output layer, which points to rounding in the 4-bit body, not the vocabulary cut.
+The vocabulary cut is not the cause: a control with the same 4-bit body and a full 262k-vocabulary fp32
+output layer writes word-for-word the same note on all 25 failing cases, so it also scores 375/400
+(`llm/results/vocab_ablation.json`). The difference from 96.5% comes from replacing the 8-bit output
+layer with fp32, which flips a few near-tie greedy choices in the 4-bit model. Failures: a flagged
+finding left out (13, mostly pleural effusion), a region the classifier did not report (9), an
+unflagged finding called present (3).
 
 **In the browser.** The shipped files run in transformers.js 4.3.2. Two fixes
 were needed and are in `llm/export_browser.py`: the WASM build has no kernel for the 4-bit embedding
